@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>動画を見るサイト</title>
+<style>
+:root{color-scheme:dark;--bg:#0f1117;--panel:#191d27;--muted:#aab2c0;--accent:#ff3434}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#f7f8fa;font-family:system-ui,-apple-system,"Noto Sans JP",sans-serif}
+header{padding:22px 18px;background:#171a22;border-bottom:1px solid #292e3a}
+.wrap{max-width:900px;margin:auto;padding:0 16px}
+.brand{font-size:23px;font-weight:800}.brand span{color:var(--accent)}
+main{max-width:900px;margin:28px auto;padding:0 16px}
+h1{font-size:25px;margin:0 0 8px}p{color:var(--muted);line-height:1.6}
+.panel{background:var(--panel);border:1px solid #2b3140;border-radius:16px;padding:18px;margin:18px 0}
+label{display:block;font-weight:700;margin-bottom:9px}
+input{width:100%;padding:14px;border-radius:10px;border:1px solid #41495a;background:#0e1118;color:white;font-size:16px}
+button{border:0;border-radius:10px;background:var(--accent);color:white;font-weight:800;padding:13px 18px;font-size:15px;cursor:pointer}
+.actions{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+.secondary{background:#343b4b}
+.player{aspect-ratio:16/9;width:100%;background:#08090c;border-radius:12px;overflow:hidden;margin-top:14px}
+iframe{width:100%;height:100%;border:0}
+.note{font-size:13px;color:var(--muted)}
+footer{text-align:center;padding:28px;color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<header><div class="wrap"><div class="brand">▶ <span>動画</span>を見る</div></div></header>
+<main>
+  <h1>YouTube動画プレイヤー</h1>
+  <p>YouTubeの動画URLを貼り付けると、このページ内で再生できます。</p>
+  <section class="panel">
+    <label for="videoUrl">YouTube動画のURL または動画ID</label>
+    <input id="videoUrl" type="url" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
+    <div class="actions">
+      <button id="play">このページで再生</button>
+      <button class="secondary" id="search">YouTubeで検索</button>
+    </div>
+    <div class="player" id="player" aria-label="動画プレイヤー">
+      <div style="height:100%;display:grid;place-items:center;color:#aab2c0;text-align:center;padding:20px">
+        動画URLを入力して「このページで再生」を押してください
+      </div>
+    </div>
+    <p class="note">※ YouTubeの埋め込みが許可されていない動画は再生できません。広告や年齢制限などはYouTube側の設定に従います。</p>
+  </section>
+</main>
+<footer>このサイトはYouTube動画を埋め込んで表示する個人用ページです。YouTube公式サービスとは別のサイトです。</footer>
+<script>
+function getVideoId(raw){
+  const s=raw.trim();
+  if(/^[\w-]{11}$/.test(s)) return s;
+  try{
+    const u=new URL(s);
+    let id='';
+    if(u.hostname==='youtu.be' || u.hostname.endsWith('.youtu.be')) id=u.pathname.split('/').filter(Boolean)[0]||'';
+    else if(u.hostname.includes('youtube.com') || u.hostname.includes('youtube-nocookie.com')){
+      id=u.searchParams.get('v')||'';
+      if(!id){const parts=u.pathname.split('/').filter(Boolean);const i=parts.findIndex(x=>['embed','shorts','live'].includes(x));if(i>=0)id=parts[i+1]||'';}
+    }
+    return /^[\w-]{11}$/.test(id)?id:null;
+  }catch{return null;}
+}
+document.getElementById('play').addEventListener('click',()=>{
+  const id=getVideoId(document.getElementById('videoUrl').value);
+  const box=document.getElementById('player');
+  if(!id){box.innerHTML='<div style="height:100%;display:grid;place-items:center;color:#ff8b8b;padding:20px;text-align:center">URLまたは動画IDを確認してください。</div>';return;}
+  box.innerHTML='';
+  const frame=document.createElement('iframe');
+  frame.src='https://www.youtube-nocookie.com/embed/'+encodeURIComponent(id);
+  frame.title='YouTube video player';
+  frame.allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+  frame.allowFullscreen=true;
+  box.appendChild(frame);
+});
+document.getElementById('search').addEventListener('click',()=>{
+  const q=document.getElementById('videoUrl').value.trim();
+  const url='https://www.youtube.com/results?search_query='+encodeURIComponent(q);
+  window.open(url,'_blank','noopener');
+});
+document.getElementById('videoUrl').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('play').click();});
+</script>
+</body>
+</html>
